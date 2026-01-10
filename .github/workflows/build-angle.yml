@@ -100,7 +100,7 @@ jobs:
 
       - name: Make Scripts Executable
         run: |
-          chmod +x setup-angle-mac.sh
+          chmod +x setup-angle-unix.sh
           chmod +x build-angle-mac.sh
 
       - name: Build ANGLE for macOS with specific commit
@@ -155,7 +155,7 @@ jobs:
 
       - name: Make Scripts Executable
         run: |
-          chmod +x setup-angle-mac.sh
+          chmod +x setup-angle-unix.sh
           chmod +x build-angle-ios.sh
 
       - name: Build ANGLE for iOS with specific commit
@@ -256,9 +256,73 @@ jobs:
           path: build/windows/angle-windows-arm64.zip
           retention-days: 7
 
+  build-linux:
+    name: Build ANGLE for Linux
+    needs: [get-angle-commit]
+    if: needs.get-angle-commit.outputs.release_exists == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git ninja-build build-essential python3 curl libvulkan-dev zip
+
+      - name: Make Scripts Executable
+        run: |
+          chmod +x setup-angle-unix.sh
+          chmod +x build-angle-linux.sh
+
+      - name: Build ANGLE for Linux with specific commit
+        env:
+          ANGLE_COMMIT: ${{ needs.get-angle-commit.outputs.angle_commit }}
+        run: |
+          echo "Building ANGLE for Linux with commit: $ANGLE_COMMIT"
+          ./build-angle-linux.sh
+
+      - name: Check Build Output
+        run: |
+          ls -la build/linux/x86_64/lib
+          ls -la build/linux/arm64/lib
+          find build/linux/x86_64/include -type f
+          find build/linux/arm64/include -type f
+
+      - name: Create Linux Archives
+        run: |
+          # Create commit.txt files
+          echo "${{ needs.get-angle-commit.outputs.angle_commit }}" > build/linux/x86_64/commit.txt
+          echo "${{ needs.get-angle-commit.outputs.angle_commit }}" > build/linux/arm64/commit.txt
+
+          # Zip directories
+          cd build/linux
+          zip -r angle-linux-x64.zip x86_64/*
+          zip -r angle-linux-arm64.zip arm64/*
+          cd ../../
+
+      - name: Upload Linux x64 Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: angle-linux-x64
+          path: build/linux/angle-linux-x64.zip
+          retention-days: 7
+
+      - name: Upload Linux ARM64 Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: angle-linux-arm64
+          path: build/linux/angle-linux-arm64.zip
+          retention-days: 7
+
   publish-release:
     name: Publish GitHub Release
-    needs: [get-angle-commit, build-mac, build-ios, build-windows]
+    needs: [get-angle-commit, build-mac, build-ios, build-windows, build-linux]
     runs-on: ubuntu-latest
     # Run on schedule, manual triggers, or push to main (but not PRs)
     # And only if the release doesn't already exist
@@ -283,6 +347,8 @@ jobs:
           find artifacts/angle-ios-universal -name "*.zip" -exec cp {} release-assets/angle-ios-universal.zip \;
           find artifacts/angle-windows-x64 -name "*.zip" -exec cp {} release-assets/angle-windows-x64.zip \;
           find artifacts/angle-windows-arm64 -name "*.zip" -exec cp {} release-assets/angle-windows-arm64.zip \;
+          find artifacts/angle-linux-x64 -name "*.zip" -exec cp {} release-assets/angle-linux-x64.zip \;
+          find artifacts/angle-linux-arm64 -name "*.zip" -exec cp {} release-assets/angle-linux-arm64.zip \;
 
           # Create a separate commit.txt file
           echo "${{ needs.get-angle-commit.outputs.angle_commit }}" > release-assets/commit.txt
@@ -312,6 +378,8 @@ jobs:
             "release-assets/angle-ios-universal.zip"
             "release-assets/angle-windows-x64.zip"
             "release-assets/angle-windows-arm64.zip"
+            "release-assets/angle-linux-x64.zip"
+            "release-assets/angle-linux-arm64.zip"
             "release-assets/commit.txt"
           )
 

@@ -5,17 +5,44 @@ set -e
 ANGLE_COMMIT=${ANGLE_COMMIT:-""}
 DEPOT_TOOLS_COMMIT=${DEPOT_TOOLS_COMMIT:-""}
 
-# Check if homebrew is installed
-if ! command -v brew &> /dev/null; then
-    echo "Homebrew is not installed. Please install it first:"
-    echo "/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
-    exit 1
-fi
+# Detect OS
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS / Darwin
+    echo "Running on macOS..."
 
-# Install ninja if not available
-if ! command -v ninja &> /dev/null; then
-    echo "Installing ninja..."
-    brew install ninja
+    # Check if homebrew is installed
+    if ! command -v brew &> /dev/null; then
+        echo "Homebrew is not installed. Please install it first:"
+        echo "/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+        exit 1
+    else
+        echo "Homebrew found."
+    fi
+
+    # Install ninja if not available
+    if ! command -v ninja &> /dev/null; then
+        echo "Installing ninja via Homebrew..."
+        brew install ninja
+    else
+        echo "Ninja already installed."
+    fi
+
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    # Linux
+    echo "Running on Linux..."
+
+    # Install ninja if not available
+    if ! command -v ninja &> /dev/null; then
+        echo "Installing ninja on Linux..."
+        sudo apt update
+        sudo apt install -y ninja-build
+    else
+        echo "Ninja already installed."
+    fi
+
+else
+    echo "Unsupported OS: $OSTYPE. Please install ninja manually."
+    exit 1
 fi
 
 # Get current directory
