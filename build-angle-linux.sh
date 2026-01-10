@@ -61,7 +61,7 @@ gn gen out/linux-release-x86_64 --args="
     target_cpu=\"x64\"
     $COMMON_ARGS
 "
-ninja -C out/linux-release-x86_64 libEGL.so libGLESv2.so libvulkan.so
+ninja -C out/linux-release-x86_64 libEGL.so libGLESv2.so
 
 # Create directory structure
 rm -rf ../build/linux/x86_64/lib
@@ -75,7 +75,7 @@ gn gen out/linux-release-arm64 --args="
     target_cpu=\"arm64\"
     $COMMON_ARGS
 "
-ninja -C out/linux-release-arm64 libEGL.so libGLESv2.so libvulkan.so
+ninja -C out/linux-release-arm64 libEGL.so libGLESv2.so
 
 rm -rf ../build/linux/arm64/lib
 mkdir -p ../build/linux/arm64/lib
