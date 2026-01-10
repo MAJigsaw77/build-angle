@@ -28,6 +28,7 @@ cd angle
 COMMON_ARGS='
     is_debug=false
     is_component_build=false
+    is_cfi=false
     angle_enable_gl=true
     angle_enable_vulkan=true
     angle_standalone=true
